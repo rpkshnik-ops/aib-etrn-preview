@@ -116,8 +116,8 @@ function markFormStarted() {
   track('form_start', { placement: 'lead_form' });
 }
 
-form?.addEventListener('input', markFormStarted, { once: true });
-form?.addEventListener('change', markFormStarted, { once: true });
+form?.addEventListener('input', markFormStarted);
+form?.addEventListener('change', markFormStarted);
 
 function setFieldError(input, message) {
   const error = document.querySelector(`#${input.id}-error`);
