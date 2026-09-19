@@ -430,17 +430,6 @@ a {
   pointer-events: none;
 }
 
-.flow-visual figcaption {
-  position: absolute;
-  z-index: 4;
-  left: 24px;
-  bottom: 20px;
-  max-width: 270px;
-  color: rgba(23, 25, 20, 0.58);
-  font-size: 11px;
-  font-weight: 650;
-}
-
 .document-card {
   position: absolute;
   z-index: 3;
@@ -992,10 +981,6 @@ body[data-variant="b"] .flow-visual::after {
   background: radial-gradient(circle at 55% 45%, rgba(244, 196, 0, 0.26), transparent 40%);
 }
 
-body[data-variant="b"] .flow-visual figcaption {
-  color: rgba(255, 255, 255, 0.46);
-}
-
 body[data-variant="b"] .document-card {
   transform: translate(-50%, -50%) rotate(2.5deg);
   box-shadow: 0 40px 85px rgba(0, 0, 0, 0.42);
@@ -1229,13 +1214,6 @@ body[data-variant="b"] .symptom-card[aria-pressed="true"] {
   .flow-node--send {
     left: 15px;
     bottom: 61px;
-  }
-
-  .flow-visual figcaption {
-    left: 18px;
-    bottom: 15px;
-    max-width: 230px;
-    font-size: 10px;
   }
 
   .symptoms,
