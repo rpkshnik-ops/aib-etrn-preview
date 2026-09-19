@@ -685,6 +685,8 @@ a {
 .symptom-card[aria-pressed="true"] {
   border-color: var(--ink);
   background: var(--yellow-soft);
+  box-shadow: inset 0 0 0 2px var(--yellow);
+  transform: translateY(-3px);
 }
 
 .symptom-card__number {
@@ -728,6 +730,15 @@ a {
 .symptom-card__action .button__icon {
   width: 15px;
   height: 15px;
+}
+
+.symptom-card[aria-pressed="true"] .symptom-card__action {
+  width: fit-content;
+  margin-top: auto;
+  padding: 10px 13px;
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--ink);
 }
 
 .selection-status {
@@ -1970,6 +1981,76 @@ body[data-variant="b"] .symptom-card:nth-child(4) {
   color: #176b36;
 }
 
+.selection-toast {
+  position: fixed;
+  z-index: 70;
+  right: 20px;
+  bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  width: min(calc(100% - 40px), 560px);
+  padding: 16px 52px 16px 18px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 18px;
+  align-items: center;
+  border: 1px solid rgba(244, 196, 0, 0.45);
+  border-radius: 18px;
+  background: #171914;
+  color: var(--white);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.34);
+}
+
+.selection-toast[hidden] {
+  display: none;
+}
+
+.selection-toast div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.selection-toast strong {
+  color: var(--yellow);
+  font-size: 14px;
+}
+
+.selection-toast span {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selection-toast a {
+  min-height: 44px;
+  padding: 10px 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.selection-toast > button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+}
+
 .site-footer {
   padding: 62px 0;
   background: #090a08;
@@ -2104,6 +2185,10 @@ body[data-variant="b"] .symptom-card:nth-child(4) {
 }
 
 @media (max-width: 820px) {
+  .site-header--final {
+    box-shadow: 0 -220px 0 220px #171914;
+  }
+
   .site-header--final::before {
     content: "";
     position: absolute;
@@ -2151,6 +2236,18 @@ body[data-variant="b"] .symptom-card:nth-child(4) {
 }
 
 @media (max-width: 620px) {
+  .selection-toast {
+    right: 14px;
+    bottom: max(14px, env(safe-area-inset-bottom, 0px));
+    width: calc(100% - 28px);
+    padding: 15px 45px 15px 16px;
+    grid-template-columns: 1fr;
+  }
+
+  .selection-toast a {
+    width: fit-content;
+  }
+
   .site-header--final .site-header__inner {
     min-height: 70px;
   }

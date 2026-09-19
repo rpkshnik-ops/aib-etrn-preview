@@ -2,6 +2,9 @@ const form = document.querySelector('[data-lead-form]');
 const contactTypeInputs = [...document.querySelectorAll('input[name="contact_type"]')];
 const symptomButtons = [...document.querySelectorAll('[data-symptom]')];
 const selectionStatus = document.querySelector('.selection-status');
+const selectionToast = document.querySelector('[data-selection-toast]');
+const selectionToastText = document.querySelector('[data-selection-toast-text]');
+const selectionToastClose = document.querySelector('[data-selection-toast-close]');
 const formStatus = document.querySelector('[data-form-status]');
 const submitButton = form?.querySelector('.form-submit');
 const submitButtonContent = submitButton?.innerHTML;
@@ -11,6 +14,7 @@ const duplicateMinutes = Number(document.body.dataset.formDuplicateMinutes || 10
 const analyticsCounter = document.body.dataset.analyticsCounter || '';
 let formStarted = false;
 let isSubmitting = false;
+let selectionToastTimer;
 
 const allowedEvents = new Set([
   'cta_click',
@@ -170,6 +174,23 @@ function showFormStatus(kind, message) {
   formStatus.textContent = message;
 }
 
+function hideSelectionToast() {
+  if (!selectionToast) return;
+  selectionToast.hidden = true;
+  window.clearTimeout(selectionToastTimer);
+}
+
+function showSelectionToast(title) {
+  if (!selectionToast || !selectionToastText) return;
+  selectionToastText.textContent = title;
+  selectionToast.hidden = false;
+  window.clearTimeout(selectionToastTimer);
+  selectionToastTimer = window.setTimeout(hideSelectionToast, 7000);
+}
+
+selectionToastClose?.addEventListener('click', hideSelectionToast);
+selectionToast?.querySelector('a')?.addEventListener('click', hideSelectionToast);
+
 function storageRead(key) {
   try {
     return window.sessionStorage.getItem(key);
@@ -321,20 +342,31 @@ form?.addEventListener('submit', async (event) => {
 symptomButtons.forEach((button) => {
   button.addEventListener('click', () => {
     const wasSelected = button.getAttribute('aria-pressed') === 'true';
-    symptomButtons.forEach((item) => item.setAttribute('aria-pressed', 'false'));
+    symptomButtons.forEach((item) => {
+      item.setAttribute('aria-pressed', 'false');
+      item.querySelector('.symptom-card__action-label').textContent = 'Добавить в заявку';
+    });
     button.setAttribute('aria-pressed', String(!wasSelected));
-
-    if (wasSelected) {
-      selectionStatus.textContent = 'Симптом не выбран. Можно описать ситуацию своими словами.';
-      return;
-    }
 
     const problem = form.elements.problem;
     const prefix = `Симптом: ${button.dataset.symptom}. `;
+
+    if (wasSelected) {
+      if (problem.value.startsWith(prefix)) {
+        problem.value = problem.value.slice(prefix.length).trimStart();
+      }
+      selectionStatus.textContent = 'Симптом не выбран. Можно описать ситуацию своими словами.';
+      hideSelectionToast();
+      return;
+    }
+
     if (!problem.value.trim() || problem.value.startsWith('Симптом:')) {
       problem.value = prefix;
     }
+    button.querySelector('.symptom-card__action-label').textContent = 'Добавлено';
     selectionStatus.textContent = `«${button.dataset.symptom}» добавлено в черновик заявки.`;
+    markFormStarted();
+    showSelectionToast(button.dataset.symptom);
   });
 });
 
