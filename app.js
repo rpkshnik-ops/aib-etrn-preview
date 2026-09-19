@@ -288,6 +288,69 @@ function installScrollReveals() {
   targets.forEach((target) => observer.observe(target));
 }
 
+function installProcessHighlights() {
+  const steps = [...document.querySelectorAll('.process-list li')];
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!steps.length || reducedMotion || !('IntersectionObserver' in window)) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    const visibleSteps = entries
+      .filter((entry) => entry.isIntersecting)
+      .sort((first, second) => steps.indexOf(first.target) - steps.indexOf(second.target));
+
+    visibleSteps.forEach((entry, batchIndex) => {
+      entry.target.style.setProperty('--process-delay', `${batchIndex * 180}ms`);
+      entry.target.classList.add('is-step-active');
+      observer.unobserve(entry.target);
+    });
+  }, { threshold: 0.34 });
+
+  steps.forEach((step) => observer.observe(step));
+}
+
+function installFaqAnimations() {
+  const items = [...document.querySelectorAll('.faq-item')];
+  if (!items.length) return;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.documentElement.classList.add('faq-enhanced');
+
+  items.forEach((item) => {
+    const summary = item.querySelector('summary');
+    const content = item.querySelector('.faq-item__content');
+    let closeTimer;
+    content.setAttribute('aria-hidden', 'true');
+
+    summary.addEventListener('click', (event) => {
+      event.preventDefault();
+      window.clearTimeout(closeTimer);
+      const expanded = item.classList.contains('is-expanded');
+
+      if (expanded) {
+        item.classList.remove('is-expanded');
+        content.setAttribute('aria-hidden', 'true');
+        if (reducedMotion) {
+          item.open = false;
+        } else {
+          closeTimer = window.setTimeout(() => {
+            if (!item.classList.contains('is-expanded')) item.open = false;
+          }, 330);
+        }
+        return;
+      }
+
+      item.open = true;
+      content.setAttribute('aria-hidden', 'false');
+      if (reducedMotion) {
+        item.classList.add('is-expanded');
+      } else {
+        window.requestAnimationFrame(() => {
+          item.classList.add('is-expanded');
+        });
+      }
+    });
+  });
+}
+
 function storageRead(key) {
   try {
     return window.sessionStorage.getItem(key);
@@ -481,14 +544,9 @@ document.querySelectorAll('dialog').forEach((dialog) => {
   dialog.addEventListener('close', updateFloatingCta);
 });
 
-document.querySelectorAll('.faq-item').forEach((item) => {
-  item.addEventListener('toggle', () => {
-    const icon = item.querySelector('summary span');
-    if (icon) icon.textContent = item.open ? '−' : '+';
-  });
-});
-
 installMetrica();
 installFloatingCta();
 installScrollReveals();
+installProcessHighlights();
+installFaqAnimations();
 showContactField('phone');

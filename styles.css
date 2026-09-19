@@ -586,6 +586,44 @@ a {
   transform: rotate(18deg);
 }
 
+.flow-visual__pulse {
+  position: absolute;
+  z-index: 2;
+  left: 14%;
+  top: 18%;
+  width: 72%;
+  height: 61%;
+  overflow: visible;
+  opacity: 0;
+  pointer-events: none;
+  transform: rotate(18deg);
+}
+
+.flow-visual__pulse ellipse {
+  fill: none;
+  stroke: var(--yellow-bright);
+  stroke-width: 4;
+  stroke-dasharray: 7 93;
+  stroke-dashoffset: 100;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 5px rgba(244, 196, 0, 0.72));
+}
+
+@keyframes route-travel {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.motion-ready .flow-visual__pulse {
+  opacity: 1;
+}
+
+.motion-ready .flow-visual__pulse ellipse {
+  animation: route-travel 3.8s linear infinite;
+}
+
 .flow-visual__signal {
   position: absolute;
   z-index: 2;
@@ -1514,12 +1552,14 @@ body[data-variant="b"] .symptom-card[aria-pressed="true"] {
 }
 
 .process-list li {
+  position: relative;
   min-height: 245px;
   padding: 26px;
   display: flex;
   flex-direction: column;
   border-right: 1px solid rgba(255, 255, 255, 0.17);
   border-bottom: 1px solid rgba(255, 255, 255, 0.17);
+  transition: background-color 240ms ease;
 }
 
 .process-list > li > span {
@@ -1532,6 +1572,7 @@ body[data-variant="b"] .symptom-card[aria-pressed="true"] {
   color: var(--ink);
   font-size: 10px;
   font-weight: 850;
+  transition: box-shadow 240ms ease, transform 240ms ease;
 }
 
 .process-list li div {
@@ -1548,6 +1589,36 @@ body[data-variant="b"] .symptom-card[aria-pressed="true"] {
   margin: 0;
   color: rgba(255, 255, 255, 0.58);
   font-size: 14px;
+}
+
+@keyframes process-highlight {
+  0%, 100% {
+    background-color: transparent;
+  }
+  25%, 72% {
+    background-color: rgba(244, 196, 0, 0.1);
+  }
+}
+
+@keyframes process-number-highlight {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(244, 196, 0, 0);
+    transform: scale(1);
+  }
+  25%, 72% {
+    box-shadow: 0 0 0 9px rgba(244, 196, 0, 0.13);
+    transform: scale(1.08);
+  }
+}
+
+.motion-ready .process-list li.is-step-active {
+  animation: process-highlight 1.05s ease both;
+  animation-delay: var(--process-delay, 0ms);
+}
+
+.motion-ready .process-list li.is-step-active > span {
+  animation: process-number-highlight 1.05s ease both;
+  animation-delay: var(--process-delay, 0ms);
 }
 
 .pricing-section {
@@ -1770,12 +1841,40 @@ body[data-variant="b"] .symptom-card[aria-pressed="true"] {
   border-radius: 50%;
   background: var(--yellow);
   font-size: 22px;
+  transition: background-color 260ms ease, transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .faq-item p {
   max-width: 680px;
   margin: -2px 60px 26px 0;
   color: var(--ink-soft);
+}
+
+.faq-item__content-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.faq-enhanced .faq-item__content {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    grid-template-rows 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 220ms ease,
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.faq-enhanced .faq-item.is-expanded .faq-item__content {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.faq-enhanced .faq-item.is-expanded summary span {
+  background: var(--yellow-bright);
+  transform: rotate(45deg);
 }
 
 .lead-section {
