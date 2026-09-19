@@ -620,6 +620,10 @@ a {
   animation: signal-pulse 2.8s ease-in-out infinite;
 }
 
+.motion-ready .eyebrow span {
+  animation: signal-pulse 2.8s ease-in-out infinite;
+}
+
 .motion-ready .flow-visual__signal--two {
   animation-delay: 1.4s;
 }
