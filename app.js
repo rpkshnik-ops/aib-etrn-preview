@@ -7,6 +7,9 @@ const selectionToastText = document.querySelector('[data-selection-toast-text]')
 const selectionToastClose = document.querySelector('[data-selection-toast-close]');
 const formStatus = document.querySelector('[data-form-status]');
 const submitButton = form?.querySelector('.form-submit');
+const floatingCta = document.querySelector('[data-floating-cta]');
+const headerCta = document.querySelector('.header-cta');
+const requestSection = document.querySelector('#request');
 const submitButtonContent = submitButton?.innerHTML;
 const formEndpoint = document.body.dataset.formEndpoint || '';
 const retrySeconds = Number(document.body.dataset.formRetrySeconds || 30);
@@ -15,6 +18,8 @@ const analyticsCounter = document.body.dataset.analyticsCounter || '';
 let formStarted = false;
 let isSubmitting = false;
 let selectionToastTimer;
+let headerCtaVisible = true;
+let requestSectionVisible = false;
 
 const allowedEvents = new Set([
   'cta_click',
@@ -178,6 +183,7 @@ function hideSelectionToast() {
   if (!selectionToast) return;
   selectionToast.hidden = true;
   window.clearTimeout(selectionToastTimer);
+  updateFloatingCta();
 }
 
 function showSelectionToast(title) {
@@ -186,10 +192,101 @@ function showSelectionToast(title) {
   selectionToast.hidden = false;
   window.clearTimeout(selectionToastTimer);
   selectionToastTimer = window.setTimeout(hideSelectionToast, 7000);
+  updateFloatingCta();
 }
 
 selectionToastClose?.addEventListener('click', hideSelectionToast);
 selectionToast?.querySelector('a')?.addEventListener('click', hideSelectionToast);
+
+function updateFloatingCta() {
+  if (!floatingCta) return;
+  const mobile = window.matchMedia('(max-width: 820px)').matches;
+  const toastVisible = selectionToast && !selectionToast.hidden;
+  const dialogOpen = Boolean(document.querySelector('dialog[open]'));
+  const keyboardOpen = window.visualViewport
+    ? window.visualViewport.height < window.innerHeight * 0.72
+    : false;
+  const visible = mobile && !headerCtaVisible && !requestSectionVisible
+    && !toastVisible && !dialogOpen && !keyboardOpen;
+
+  floatingCta.classList.toggle('is-visible', visible);
+  floatingCta.setAttribute('aria-hidden', String(!visible));
+  floatingCta.tabIndex = visible ? 0 : -1;
+}
+
+function installFloatingCta() {
+  if (!floatingCta || !headerCta || !requestSection) return;
+
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.target === headerCta) headerCtaVisible = entry.isIntersecting;
+        if (entry.target === requestSection) requestSectionVisible = entry.isIntersecting;
+      });
+      updateFloatingCta();
+    }, { threshold: 0.01 });
+    observer.observe(headerCta);
+    observer.observe(requestSection);
+  } else {
+    const checkPosition = () => {
+      headerCtaVisible = headerCta.getBoundingClientRect().bottom > 0;
+      const requestRect = requestSection.getBoundingClientRect();
+      requestSectionVisible = requestRect.top < window.innerHeight && requestRect.bottom > 0;
+      updateFloatingCta();
+    };
+    window.addEventListener('scroll', checkPosition, { passive: true });
+    checkPosition();
+  }
+
+  window.addEventListener('resize', updateFloatingCta, { passive: true });
+  window.visualViewport?.addEventListener('resize', updateFloatingCta, { passive: true });
+  floatingCta.addEventListener('click', () => {
+    floatingCta.classList.remove('is-visible');
+    floatingCta.setAttribute('aria-hidden', 'true');
+    floatingCta.tabIndex = -1;
+  });
+  updateFloatingCta();
+}
+
+function installScrollReveals() {
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reducedMotion || !('IntersectionObserver' in window)) return;
+
+  const selectors = [
+    '.promise-strip p',
+    '.symptoms__heading',
+    '.symptom-card',
+    '.section-heading',
+    '.scope-card',
+    '.boundaries',
+    '.process-list li',
+    '.pricing-card',
+    '.pricing-copy',
+    '.trust-layout > div',
+    '.faq-heading',
+    '.faq-item',
+    '.lead-copy',
+    '.lead-form',
+  ];
+  const targets = [...new Set(selectors.flatMap((selector) => (
+    [...document.querySelectorAll(selector)]
+  )))];
+
+  targets.forEach((target, index) => {
+    target.dataset.reveal = '';
+    target.style.setProperty('--reveal-delay', `${(index % 3) * 65}ms`);
+  });
+  document.documentElement.classList.add('motion-ready');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-visible');
+      observer.unobserve(entry.target);
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+  targets.forEach((target) => observer.observe(target));
+}
 
 function storageRead(key) {
   try {
@@ -373,8 +470,15 @@ symptomButtons.forEach((button) => {
 document.querySelectorAll('[data-open-dialog]').forEach((button) => {
   button.addEventListener('click', () => {
     const dialog = document.querySelector(`#${button.dataset.openDialog}`);
-    if (typeof dialog?.showModal === 'function') dialog.showModal();
+    if (typeof dialog?.showModal === 'function') {
+      dialog.showModal();
+      updateFloatingCta();
+    }
   });
+});
+
+document.querySelectorAll('dialog').forEach((dialog) => {
+  dialog.addEventListener('close', updateFloatingCta);
 });
 
 document.querySelectorAll('.faq-item').forEach((item) => {
@@ -385,4 +489,6 @@ document.querySelectorAll('.faq-item').forEach((item) => {
 });
 
 installMetrica();
+installFloatingCta();
+installScrollReveals();
 showContactField('phone');
