@@ -15,7 +15,16 @@
     <link rel="stylesheet" href="styles.css">
     <script src="app.js" defer></script>
   </head>
-  <body data-variant="b" data-preview="true">
+  <body
+    data-variant="b"
+    data-preview="true"
+    data-form-mode="testing"
+    data-form-endpoint="https://formsubmit.co/ajax/niki-antr@yandex.ru"
+    data-form-retry-seconds="30"
+    data-form-duplicate-minutes="10"
+    data-analytics-provider="Yandex Metrica"
+    data-analytics-counter=""
+  >
     <a class="skip-link" href="#main">К содержанию</a>
 
     <header class="site-header site-header--final">
@@ -310,11 +319,15 @@
           <div class="lead-copy">
             <p class="section-index">07 / Заявка</p>
             <h2 id="request-title">Коротко опишите проблему</h2>
-            <p>После подключения канала менеджер уточнит детали в течение 2 рабочих часов. На первом шаге не нужны ИНН, доступы, сертификаты или файлы.</p>
-            <div class="preview-badge"><span aria-hidden="true">!</span><p><strong>Режим предпросмотра.</strong> Форма проверяет поля, но пока не передаёт данные: канал заявок и документы обработки данных на согласовании.</p></div>
+            <p>Заявка поступит на тестовый email. Менеджер уточнит детали в течение 2 рабочих часов. На первом шаге не нужны ИНН, доступы, сертификаты или файлы.</p>
+            <div class="preview-badge"><span aria-hidden="true">!</span><p><strong>Тестовый запуск.</strong> Форма передаёт заявку на niki-antr@yandex.ru через FormSubmit. Не отправляйте секреты, ключи и доступы.</p></div>
           </div>
 
-          <form class="lead-form" novalidate data-lead-form>
+          <form class="lead-form" novalidate data-lead-form autocomplete="on">
+            <div class="form-honey" aria-hidden="true">
+              <label for="website">Не заполняйте это поле</label>
+              <input id="website" name="_honey" type="text" tabindex="-1" autocomplete="off">
+            </div>
             <fieldset class="contact-choice">
               <legend>Как с вами связаться? <span aria-hidden="true">*</span></legend>
               <label><input type="radio" name="contact_type" value="phone" checked> Телефон</label>
@@ -353,7 +366,7 @@
 
             <div class="consent-row">
               <input id="consent" name="consent" type="checkbox" aria-describedby="consent-error">
-              <label for="consent">Согласен на обработку данных для ответа на обращение.</label>
+              <label for="consent">Согласен на обработку и передачу данных через FormSubmit для ответа на обращение.</label>
               <button type="button" class="inline-link" data-open-dialog="privacy-dialog">Проект условий</button>
             </div>
             <p class="field-error" id="consent-error"></p>
@@ -372,9 +385,9 @@
           <div><strong>Компания АиБ</strong><span>ООО «Компания АиБ»</span></div>
         </div>
         <dl class="footer-contacts">
-          <div><dt>Телефон</dt><dd>На согласовании</dd></div>
-          <div><dt>Email</dt><dd>На согласовании</dd></div>
-          <div><dt>Канал заявок</dt><dd>На согласовании</dd></div>
+          <div><dt>Телефон</dt><dd><a href="tel:+79221460076" data-contact data-channel="phone">+7 922 146-00-76</a></dd></div>
+          <div><dt>Email</dt><dd><a href="mailto:niki-antr@yandex.ru" data-contact data-channel="email">niki-antr@yandex.ru</a></dd></div>
+          <div><dt>Канал заявок</dt><dd>Email</dd></div>
         </dl>
         <div class="footer-docs">
           <button type="button" data-open-dialog="offer-dialog">Статус оферты</button>
@@ -389,7 +402,7 @@
         <button class="dialog-close" aria-label="Закрыть окно">×</button>
         <p class="section-index">Проект документа</p>
         <h2 id="privacy-title">Обработка персональных данных</h2>
-        <p>Политика и текст согласия будут подготовлены после выбора фактического получателя заявок, места хранения и срока обработки данных. Текущая форма работает только как интерфейсный предпросмотр и ничего не отправляет.</p>
+        <p>Для тестового ответа ООО «Компания АиБ» получает указанные в форме контакт, имя, компанию и описание проблемы. Передача выполняется через сервис FormSubmit на адрес niki-antr@yandex.ru; по документации сервиса обращения могут храниться до 30 дней. Не указывайте в форме пароли, закрытые ключи, сертификаты и данные третьих лиц. Согласие можно отозвать письмом на niki-antr@yandex.ru. Это проект условий для тестирования, а не утверждённая финальная политика.</p>
         <button class="button button--dark" value="close">Понятно</button>
       </form>
     </dialog>
