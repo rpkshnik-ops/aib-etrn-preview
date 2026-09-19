@@ -542,7 +542,8 @@ a {
   gap: 8px;
   border: 1px solid rgba(23, 25, 20, 0.1);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--white);
+  color: var(--ink);
   box-shadow: 0 9px 26px rgba(23, 25, 20, 0.1);
   font-size: 11px;
   font-weight: 780;
@@ -2267,6 +2268,70 @@ body[data-variant="b"] .symptom-card[aria-pressed="true"] {
 .info-dialog p:not(.section-index) {
   margin: 22px 0 30px;
   color: var(--ink-soft);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .scope-card {
+    transition:
+      translate 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 220ms ease,
+      border-color 220ms ease;
+  }
+
+  .motion-ready .scope-card[data-reveal] {
+    transition:
+      opacity 620ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
+      translate 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 220ms ease,
+      border-color 220ms ease;
+    transition-delay: var(--reveal-delay, 0ms), var(--reveal-delay, 0ms), 0ms, 0ms, 0ms;
+  }
+
+  .scope-card:hover {
+    translate: 0 -7px;
+    border-color: rgba(23, 25, 20, 0.28);
+    box-shadow: 0 22px 50px rgba(23, 25, 20, 0.14);
+  }
+
+  .scope-card--wide:hover {
+    border-color: rgba(244, 196, 0, 0.55);
+    box-shadow: 0 24px 56px rgba(23, 25, 20, 0.28);
+  }
+
+  .process-list li {
+    transition: background-color 210ms ease;
+  }
+
+  .process-list > li > span {
+    transition: box-shadow 210ms ease, transform 210ms ease;
+  }
+
+  .process-list li:hover {
+    background: rgba(244, 196, 0, 0.09);
+  }
+
+  .process-list li:hover > span {
+    box-shadow: 0 0 0 8px rgba(244, 196, 0, 0.12);
+    transform: scale(1.08);
+  }
+
+  .flow-node {
+    transition:
+      background-color 190ms ease,
+      box-shadow 190ms ease,
+      transform 190ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .flow-node:hover {
+    background: var(--yellow-soft);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
+    transform: translateY(-3px) scale(1.04);
+  }
+
+  .motion-ready .flow-visual:has(.flow-node:hover) .flow-visual__pulse ellipse {
+    animation-duration: 1.45s;
+  }
 }
 
 @media (max-width: 1100px) {
