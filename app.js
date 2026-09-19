@@ -288,26 +288,6 @@ function installScrollReveals() {
   targets.forEach((target) => observer.observe(target));
 }
 
-function installProcessHighlights() {
-  const steps = [...document.querySelectorAll('.process-list li')];
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!steps.length || reducedMotion || !('IntersectionObserver' in window)) return;
-
-  const observer = new IntersectionObserver((entries) => {
-    const visibleSteps = entries
-      .filter((entry) => entry.isIntersecting)
-      .sort((first, second) => steps.indexOf(first.target) - steps.indexOf(second.target));
-
-    visibleSteps.forEach((entry, batchIndex) => {
-      entry.target.style.setProperty('--process-delay', `${batchIndex * 180}ms`);
-      entry.target.classList.add('is-step-active');
-      observer.unobserve(entry.target);
-    });
-  }, { threshold: 0.34 });
-
-  steps.forEach((step) => observer.observe(step));
-}
-
 function installFaqAnimations() {
   const items = [...document.querySelectorAll('.faq-item')];
   if (!items.length) return;
@@ -547,6 +527,5 @@ document.querySelectorAll('dialog').forEach((dialog) => {
 installMetrica();
 installFloatingCta();
 installScrollReveals();
-installProcessHighlights();
 installFaqAnimations();
 showContactField('phone');
