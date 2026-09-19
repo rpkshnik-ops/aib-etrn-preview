@@ -957,8 +957,8 @@ body[data-variant="b"] .symptom-card {
   background: var(--white);
 }
 
-body[data-variant="b"] .symptom-card:nth-child(1),
-body[data-variant="b"] .symptom-card:nth-child(4) {
+body[data-variant="b"] .symptom-card[aria-pressed="true"] {
+  border-color: var(--ink);
   background: var(--yellow-soft);
 }
 
@@ -2186,19 +2186,13 @@ body[data-variant="b"] .symptom-card:nth-child(4) {
 
 @media (max-width: 820px) {
   .site-header--final {
-    box-shadow: 0 -220px 0 220px #171914;
+    position: relative;
+    top: auto;
+    box-shadow: none;
   }
 
   .site-header--final::before {
-    content: "";
-    position: absolute;
-    z-index: 0;
-    right: 0;
-    bottom: 100%;
-    left: 0;
-    height: calc(180px + env(safe-area-inset-top, 0px));
-    background: #171914;
-    pointer-events: none;
+    content: none;
   }
 
   .section-heading--split,
