@@ -403,7 +403,7 @@ def render_page(options=None, asset_version="dev"):
             <section class="form-documents" aria-labelledby="form-documents-title">
               <h3 id="form-documents-title">Документы к заявке</h3>
               <p>Ознакомьтесь с условиями до отправки. Документы откроются в новой вкладке — заполненная форма сохранится.</p>
-              <a class="document-link" href="assets/documents/offer.pdf?v=20260923" target="_blank" rel="noopener" aria-label="Публичная оферта — PDF, в новой вкладке">
+              <a class="document-link" href="{e(offer_url)}" target="_blank" rel="noopener" aria-label="Публичная оферта — PDF, в новой вкладке">
                 <span class="document-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M7 3h7l4 4v14H7zM14 3v5h4M10 12h5M10 16h5"/></svg></span>
                 <span class="document-link__label">Публичная оферта</span>
                 <span class="document-link__format" aria-hidden="true">PDF</span>

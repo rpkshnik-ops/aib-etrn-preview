@@ -28,6 +28,7 @@ class BuildTest(unittest.TestCase):
             self.assertIn('data-form-endpoint="/api/leads"', page)
             self.assertIn('rel="canonical" href="https://landing.example.org/"', page)
             self.assertIn('index, follow', page)
+            self.assertEqual(page.count('href="https://landing.example.org/legal/offer.pdf"'), 2)
             self.assertIn('https://landing.example.org/sitemap.xml', (output / 'robots.txt').read_text())
             for unwanted in ('Тестовый запуск', 'тестовый email', 'На согласовании', 'Проект документа', 'Предпросмотр', 'privacy-dialog'):
                 self.assertNotIn(unwanted, page)

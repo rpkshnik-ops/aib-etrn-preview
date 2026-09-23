@@ -6,6 +6,7 @@ project=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
 [[ "$project" == /opt/aib-etrn/repo ]] || { echo 'Склонируйте проект в /opt/aib-etrn/repo, как указано в README.' >&2; exit 1; }
 cd "$project"
 if [[ ${1:-} == --smtp-only ]]; then
+  [[ $# -eq 1 ]] || { echo 'Допустим только параметр --smtp-only' >&2; exit 1; }
   exec /opt/aib-etrn/venv/bin/python deploy/configure.py --smtp-only
 fi
 [[ $# -eq 0 ]] || { echo 'Допустимый параметр: --smtp-only' >&2; exit 1; }
