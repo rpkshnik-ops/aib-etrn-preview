@@ -387,6 +387,23 @@
               <p class="field-error" id="problem-error"></p>
             </div>
 
+            <section class="form-documents" aria-labelledby="form-documents-title">
+              <h3 id="form-documents-title">Документы к заявке</h3>
+              <p>Ознакомьтесь с условиями до отправки. Документы откроются в новой вкладке — заполненная форма сохранится.</p>
+              <a class="document-link" href="assets/documents/offer.pdf?v=20260923" target="_blank" rel="noopener" aria-label="Публичная оферта — PDF, в новой вкладке">
+                <span class="document-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M7 3h7l4 4v14H7zM14 3v5h4M10 12h5M10 16h5"/></svg></span>
+                <span class="document-link__label">Публичная оферта</span>
+                <span class="document-link__format" aria-hidden="true">PDF</span>
+                <span class="button__icon" aria-hidden="true"><svg viewBox="0 0 20 20" focusable="false"><path d="M5 15 15 5M8 5h7v7"/></svg></span>
+              </a>
+              <a class="document-link" href="assets/documents/confidentiality.pdf?v=20260923" target="_blank" rel="noopener" aria-label="Соглашение о конфиденциальности — PDF, в новой вкладке">
+                <span class="document-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 3 4 6v6c0 4 4 7 8 9 4-2 8-5 8-9V6zM8 12l3 3 5-6"/></svg></span>
+                <span class="document-link__label">Соглашение о конфиденциальности</span>
+                <span class="document-link__format" aria-hidden="true">PDF</span>
+                <span class="button__icon" aria-hidden="true"><svg viewBox="0 0 20 20" focusable="false"><path d="M5 15 15 5M8 5h7v7"/></svg></span>
+              </a>
+            </section>
+
             <div class="consent-row">
               <input id="consent" name="consent" type="checkbox" aria-describedby="consent-error">
               <label for="consent">Согласен на обработку и передачу данных через FormSubmit для ответа на обращение.</label>
@@ -422,7 +439,8 @@
           <div><dt>Канал заявок</dt><dd>Email</dd></div>
         </dl>
         <div class="footer-docs">
-          <button type="button" data-open-dialog="offer-dialog">Статус оферты</button>
+          <a href="assets/documents/offer.pdf?v=20260923" target="_blank" rel="noopener">Публичная оферта · PDF</a>
+          <a href="assets/documents/confidentiality.pdf?v=20260923" target="_blank" rel="noopener">Соглашение о конфиденциальности · PDF</a>
           <button type="button" data-open-dialog="privacy-dialog">Обработка данных</button>
           <span>Предпросмотр · не для индексации</span>
         </div>
@@ -439,14 +457,5 @@
       </form>
     </dialog>
 
-    <dialog class="info-dialog" id="offer-dialog" aria-labelledby="offer-title">
-      <form method="dialog">
-        <button class="dialog-close" aria-label="Закрыть окно">×</button>
-        <p class="section-index">На согласовании</p>
-        <h2 id="offer-title">Финальная редакция оферты</h2>
-        <p>Перед запуском в оферте нужно закрепить расширенный предмет услуг, срок 1–5 рабочих дней, гарантию 14 дней, условия возврата, ставку НДС 5% и исправить пропуск единицы времени в пункте 3.2.</p>
-        <button class="button button--dark" value="close">Понятно</button>
-      </form>
-    </dialog>
   </body>
 </html>
