@@ -32,7 +32,7 @@ def settings(values=None):
     if type(result["delivery_confirmed"]) is not bool:
         raise ValueError("delivery_confirmed must be true or false")
     counter = str(result["metrica_id"])
-    if counter and not re.fullmatch(r"\d{5,12}", counter):
+    if counter and not re.fullmatch(r"[0-9]{5,12}", counter):
         raise ValueError("metrica_id must contain 5–12 digits")
     result["metrica_id"] = counter
     if result["mode"] == "production":

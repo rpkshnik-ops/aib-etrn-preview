@@ -4,9 +4,23 @@ from pathlib import Path
 
 from build import build
 from src.deployment import settings
+from src.render import render_page
 
 
 class BuildTest(unittest.TestCase):
+    def test_metrica_is_optional_and_only_enabled_in_production(self):
+        for mode in ('preview', 'staging', 'production'):
+            for counter in ('', '12345678'):
+                with self.subTest(mode=mode, counter=counter):
+                    page = render_page({'mode': mode, 'metrica_id': counter,
+                                        'site_url': 'https://landing.example.org/',
+                                        'privacy_url': 'https://landing.example.org/legal/privacy.pdf',
+                                        'consent_url': 'https://landing.example.org/legal/consent.pdf',
+                                        'offer_url': 'https://landing.example.org/assets/documents/offer.pdf',
+                                        'delivery_confirmed': True})
+                    expected = counter if mode == 'production' else ''
+                    self.assertIn(f'data-analytics-counter="{expected}"', page)
+
     def test_production_requires_actual_settings(self):
         for value in ({'mode': 'production'}, {'mode': 'unknown'}, {'site_url': 'javascript:alert(1)'},
                       {'privacy_url': '//other.example/doc'}, {'metrica_id': 'garbage'}):

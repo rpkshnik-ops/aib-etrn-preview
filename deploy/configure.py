@@ -73,6 +73,37 @@ def collect_smtp(previous=None):
             print('Некорректные параметры. Проверьте адрес, порт, режим TLS, логин и email; повторите ввод.')
 
 
+def collect_metrica(previous=''):
+    action = 'сохранить прежний ID' if previous else 'пропустить'
+    while True:
+        value = ask(f'ID счётчика Яндекс Метрики (необязательно; Enter — {action}; - — отключить)', previous)
+        if value == '-':
+            return ''
+        try:
+            return settings({'metrica_id': value})['metrica_id']
+        except ValueError:
+            print('Введите только цифровой ID счётчика (5–12 цифр), без HTML-кода и ссылок, либо пропустите настройку.')
+
+
+def report_metrica(site):
+    if not site['metrica_id']:
+        print('Яндекс Метрика отключена: сторонний скрипт аналитики не загружается.')
+    elif site['mode'] != 'production':
+        print('ID Метрики сохранён. В preview/staging аналитика отключена; счётчик подключится после перехода в production.')
+    else:
+        print('ID Метрики сохранён для production-сборки: ' + site['metrica_id'])
+
+
+def configure_analytics(site_path):
+    site = settings(json.loads(site_path.read_text(encoding='utf-8')))
+    site['metrica_id'] = collect_metrica(site['metrica_id'])
+    site_path.write_text(json.dumps(site, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    run(sys.executable, 'build.py', '--config', site_path)
+    run('bash', 'deploy/publish.sh', ROOT / 'dist')
+    report_metrica(site)
+    print('Настройки аналитики обновлены. SMTP и очередь заявок не изменялись.')
+
+
 def write_private_json(path, values, gid=None):
     path = Path(path)
     fd, temporary = tempfile.mkstemp(prefix='.aib-', dir=path.parent)
@@ -96,15 +127,23 @@ def run(*args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Настройка Linux-сервера и SMTP')
-    parser.add_argument('--smtp-only', action='store_true', help='Изменить только SMTP и перезапустить обработчики')
+    parser = argparse.ArgumentParser(description='Настройка Linux-сервера, SMTP и необязательной аналитики')
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--smtp-only', action='store_true', help='Изменить только SMTP и перезапустить обработчики')
+    mode.add_argument('--analytics-only', action='store_true', help='Изменить только Яндекс Метрику и пересобрать сайт')
     args = parser.parse_args()
     if sys.platform != 'linux' or os.geteuid() != 0:
         parser.error('Запустите установщик на Linux через sudo')
     if ROOT != Path('/opt/aib-etrn/repo'):
         parser.error('Проект должен находиться в /opt/aib-etrn/repo')
     if not sys.stdin.isatty():
-        parser.error('Нужен интерактивный терминал для скрытого ввода пароля')
+        parser.error('Нужен интерактивный терминал для настройки (пароль SMTP вводится скрыто)')
+    site_path = ROOT / 'site.local.json'
+    if args.analytics_only:
+        if not site_path.exists() or not CONFIG_PATH.exists():
+            parser.error('Сначала выполните полную установку')
+        configure_analytics(site_path)
+        return 0
     import grp
     import shutil
     old = json.loads(CONFIG_PATH.read_text(encoding='utf-8')) if CONFIG_PATH.exists() else {}
@@ -147,7 +186,6 @@ def main():
         run('systemctl', 'restart', 'aib-etrn-api', 'aib-etrn-worker')
         print('SMTP обновлён. Неотправленные заявки: sudo bash deploy/manage.sh retry-failed')
         return 0
-    site_path = ROOT / 'site.local.json'
     site = json.loads(site_path.read_text(encoding='utf-8')) if site_path.exists() else {
         'mode': 'staging', 'site_url': cfg['origin'], 'privacy_url': '', 'consent_url': '',
         'offer_url': cfg['origin'] + '/assets/documents/offer.pdf',
@@ -155,8 +193,10 @@ def main():
     }
     site['privacy_url'] = ask('Ссылка HTTPS на политику обработки данных (можно заполнить позже)', site.get('privacy_url', ''))
     site['consent_url'] = ask('Ссылка HTTPS на текст согласия (можно заполнить позже)', site.get('consent_url', ''))
+    site['metrica_id'] = collect_metrica(site.get('metrica_id', ''))
     site = settings(site)
     site_path.write_text(json.dumps(site, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    report_metrica(site)
     run(sys.executable, 'build.py', '--config', site_path)
     run('bash', 'deploy/publish.sh', ROOT / 'dist')
     for service in ('aib-etrn-api.service', 'aib-etrn-worker.service'):

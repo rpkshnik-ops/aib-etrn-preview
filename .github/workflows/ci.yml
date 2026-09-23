@@ -20,6 +20,7 @@ jobs:
       - run: python build.py --mode preview
       - run: diff -r docs dist
       - run: python -m playwright install --with-deps chromium
+      - run: python analytics_check.py
       - name: Browser checks (preview then server build)
         run: |
           python -m http.server 4173 --bind 127.0.0.1 --directory dist > /tmp/aib-http.log 2>&1 &
