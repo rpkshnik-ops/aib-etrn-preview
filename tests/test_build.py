@@ -1,0 +1,43 @@
+import tempfile
+import unittest
+from pathlib import Path
+
+from build import build
+from src.deployment import settings
+
+
+class BuildTest(unittest.TestCase):
+    def test_production_requires_actual_settings(self):
+        for value in ({'mode': 'production'}, {'mode': 'unknown'}, {'site_url': 'javascript:alert(1)'},
+                      {'privacy_url': '//other.example/doc'}, {'metrica_id': 'garbage'}):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                settings(value)
+
+    def test_modes_and_repeat_build(self):
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp)
+            options = {
+                'mode': 'production', 'site_url': 'https://landing.example.org',
+                'privacy_url': 'https://landing.example.org/legal/privacy.pdf',
+                'consent_url': 'https://landing.example.org/legal/consent.pdf',
+                'offer_url': 'https://landing.example.org/legal/offer.pdf',
+                'delivery_confirmed': True,
+            }
+            build(output, options)
+            page = (output / 'index.html').read_text(encoding='utf-8')
+            self.assertIn('data-form-endpoint="/api/leads"', page)
+            self.assertIn('rel="canonical" href="https://landing.example.org/"', page)
+            self.assertIn('index, follow', page)
+            self.assertIn('https://landing.example.org/sitemap.xml', (output / 'robots.txt').read_text())
+            for unwanted in ('Тестовый запуск', 'тестовый email', 'На согласовании', 'Проект документа', 'Предпросмотр', 'privacy-dialog'):
+                self.assertNotIn(unwanted, page)
+            build(output, options)
+            self.assertEqual(page, (output / 'index.html').read_text(encoding='utf-8'))
+            build(output, {'mode': 'staging'})
+            self.assertNotIn('<url>', (output / 'sitemap.xml').read_text())
+            self.assertIn('Disallow: /', (output / 'robots.txt').read_text())
+            self.assertIn('noindex', (output / 'index.html').read_text(encoding='utf-8'))
+
+
+if __name__ == '__main__':
+    unittest.main()

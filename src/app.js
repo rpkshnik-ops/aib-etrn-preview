@@ -1,0 +1,540 @@
+const form = document.querySelector('[data-lead-form]');
+const contactTypeInputs = [...document.querySelectorAll('input[name="contact_type"]')];
+const symptomButtons = [...document.querySelectorAll('[data-symptom]')];
+const selectionStatus = document.querySelector('.selection-status');
+const selectionToast = document.querySelector('[data-selection-toast]');
+const selectionToastText = document.querySelector('[data-selection-toast-text]');
+const selectionToastClose = document.querySelector('[data-selection-toast-close]');
+const formStatus = document.querySelector('[data-form-status]');
+const submitButton = form?.querySelector('.form-submit');
+const floatingCta = document.querySelector('[data-floating-cta]');
+const headerCta = document.querySelector('.header-cta');
+const requestSection = document.querySelector('#request');
+const submitButtonContent = submitButton?.innerHTML;
+const formEndpoint = document.body.dataset.formEndpoint || '';
+const retrySeconds = Number(document.body.dataset.formRetrySeconds || 30);
+const duplicateMinutes = Number(document.body.dataset.formDuplicateMinutes || 10);
+const analyticsCounter = document.body.dataset.analyticsCounter || '';
+let formStarted = false;
+let isSubmitting = false;
+let selectionToastTimer;
+let headerCtaVisible = true;
+let requestSectionVisible = false;
+
+const allowedEvents = new Set([
+  'cta_click',
+  'form_start',
+  'form_error',
+  'lead_accepted',
+  'contact_click',
+]);
+
+function safeAnalyticsPayload(name, payload) {
+  if (name === 'cta_click') {
+    return { placement: String(payload.placement || 'unknown').slice(0, 40) };
+  }
+  if (name === 'form_error') {
+    return { fields: String(payload.fields || '').slice(0, 100) };
+  }
+  if (name === 'contact_click') {
+    return { channel: payload.channel === 'email' ? 'email' : 'phone' };
+  }
+  return {};
+}
+
+function installMetrica() {
+  if (!/^\d{5,12}$/.test(analyticsCounter)) return;
+  window.ym = window.ym || function () {
+    (window.ym.a = window.ym.a || []).push(arguments);
+  };
+  window.ym.l = Date.now();
+  if (!document.querySelector('script[data-aib-metrica]')) {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://mc.yandex.ru/metrika/tag.js';
+    script.dataset.aibMetrica = 'true';
+    document.head.append(script);
+  }
+  window.ym(Number(analyticsCounter), 'init', {
+    clickmap: false,
+    trackLinks: false,
+    accurateTrackBounce: true,
+    webvisor: false,
+  });
+}
+
+function track(name, payload = {}) {
+  if (!allowedEvents.has(name)) return;
+  const safePayload = safeAnalyticsPayload(name, payload);
+  window.dispatchEvent(
+    new CustomEvent('aib:analytics', {
+      detail: { name, ...safePayload },
+    })
+  );
+  if (/^\d{5,12}$/.test(analyticsCounter) && typeof window.ym === 'function') {
+    window.ym(Number(analyticsCounter), 'reachGoal', name, safePayload);
+  }
+}
+
+function safeUtm() {
+  const params = new URLSearchParams(window.location.search);
+  const allowed = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+  return Object.fromEntries(
+    allowed
+      .map((key) => [key, params.get(key)])
+      .filter(([, value]) => value && /^[\p{L}\p{N}._ -]{1,100}$/u.test(value))
+  );
+}
+
+window.aibSite = {
+  track,
+  utm: safeUtm(),
+  analyticsEnabled: /^\d{5,12}$/.test(analyticsCounter),
+};
+
+document.querySelectorAll('[data-cta]').forEach((link) => {
+  link.addEventListener('click', () => {
+    track('cta_click', { placement: link.dataset.placement || 'unknown' });
+  });
+});
+
+document.querySelectorAll('[data-contact]').forEach((link) => {
+  link.addEventListener('click', () => {
+    track('contact_click', { channel: link.dataset.channel });
+  });
+});
+
+function showContactField(type) {
+  document.querySelectorAll('[data-contact-field]').forEach((field) => {
+    const isActive = field.dataset.contactField === type;
+    field.hidden = !isActive;
+    const input = field.querySelector('input');
+    input.disabled = !isActive;
+    input.toggleAttribute('required', isActive);
+    if (!isActive) clearFieldError(input);
+  });
+}
+
+contactTypeInputs.forEach((input) => {
+  input.addEventListener('change', () => showContactField(input.value));
+});
+
+function markFormStarted() {
+  if (formStarted) return;
+  formStarted = true;
+  track('form_start', { placement: 'lead_form' });
+}
+
+form?.addEventListener('input', markFormStarted);
+form?.addEventListener('change', markFormStarted);
+
+function setFieldError(input, message) {
+  const error = document.querySelector(`#${input.id}-error`);
+  input.setAttribute('aria-invalid', 'true');
+  if (error) error.textContent = message;
+}
+
+function clearFieldError(input) {
+  if (!input) return;
+  const error = document.querySelector(`#${input.id}-error`);
+  input.removeAttribute('aria-invalid');
+  if (error) error.textContent = '';
+}
+
+function validateForm() {
+  const errors = [];
+  const contactType = form.elements.contact_type.value;
+  const contactInput = form.elements[contactType];
+  const problem = form.elements.problem;
+  const consent = form.elements.consent;
+
+  [form.elements.phone, form.elements.email, problem, consent].forEach(clearFieldError);
+
+  if (contactType === 'phone') {
+    const digits = contactInput.value.replace(/\D/g, '');
+    if (digits.length < 10 || digits.length > 15) {
+      setFieldError(contactInput, 'Укажите телефон: от 10 до 15 цифр.');
+      errors.push('phone');
+    }
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactInput.value.trim())) {
+    setFieldError(contactInput, 'Укажите корректный email.');
+    errors.push('email');
+  }
+
+  if (problem.value.trim().length < 20) {
+    setFieldError(problem, 'Опишите проблему хотя бы в 20 символах.');
+    errors.push('problem');
+  }
+
+  if (!consent.checked) {
+    setFieldError(consent, 'Нужно подтвердить согласие на обработку данных.');
+    errors.push('consent');
+  }
+
+  return errors;
+}
+
+function showFormStatus(kind, message) {
+  formStatus.className = `form-status form-status--${kind}`;
+  formStatus.textContent = message;
+}
+
+function hideSelectionToast() {
+  if (!selectionToast) return;
+  selectionToast.hidden = true;
+  window.clearTimeout(selectionToastTimer);
+  updateFloatingCta();
+}
+
+function showSelectionToast(title) {
+  if (!selectionToast || !selectionToastText) return;
+  selectionToastText.textContent = title;
+  selectionToast.hidden = false;
+  window.clearTimeout(selectionToastTimer);
+  selectionToastTimer = window.setTimeout(hideSelectionToast, 7000);
+  updateFloatingCta();
+}
+
+selectionToastClose?.addEventListener('click', hideSelectionToast);
+selectionToast?.querySelector('a')?.addEventListener('click', hideSelectionToast);
+
+function updateFloatingCta() {
+  if (!floatingCta) return;
+  const mobile = window.matchMedia('(max-width: 820px)').matches;
+  const toastVisible = selectionToast && !selectionToast.hidden;
+  const dialogOpen = Boolean(document.querySelector('dialog[open]'));
+  const keyboardOpen = window.visualViewport
+    ? window.visualViewport.height < window.innerHeight * 0.72
+    : false;
+  const visible = mobile && !headerCtaVisible && !requestSectionVisible
+    && !toastVisible && !dialogOpen && !keyboardOpen;
+
+  floatingCta.classList.toggle('is-visible', visible);
+  floatingCta.setAttribute('aria-hidden', String(!visible));
+  floatingCta.tabIndex = visible ? 0 : -1;
+}
+
+function installFloatingCta() {
+  if (!floatingCta || !headerCta || !requestSection) return;
+
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.target === headerCta) headerCtaVisible = entry.isIntersecting;
+        if (entry.target === requestSection) requestSectionVisible = entry.isIntersecting;
+      });
+      updateFloatingCta();
+    }, { threshold: 0.01 });
+    observer.observe(headerCta);
+    observer.observe(requestSection);
+  } else {
+    const checkPosition = () => {
+      headerCtaVisible = headerCta.getBoundingClientRect().bottom > 0;
+      const requestRect = requestSection.getBoundingClientRect();
+      requestSectionVisible = requestRect.top < window.innerHeight && requestRect.bottom > 0;
+      updateFloatingCta();
+    };
+    window.addEventListener('scroll', checkPosition, { passive: true });
+    checkPosition();
+  }
+
+  window.addEventListener('resize', updateFloatingCta, { passive: true });
+  window.visualViewport?.addEventListener('resize', updateFloatingCta, { passive: true });
+  floatingCta.addEventListener('click', () => {
+    floatingCta.classList.remove('is-visible');
+    floatingCta.setAttribute('aria-hidden', 'true');
+    floatingCta.tabIndex = -1;
+  });
+  updateFloatingCta();
+}
+
+function installScrollReveals() {
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reducedMotion || !('IntersectionObserver' in window)) return;
+
+  const selectors = [
+    '.promise-strip p',
+    '.symptoms__heading',
+    '.symptom-card',
+    '.section-heading',
+    '.scope-card',
+    '.boundaries',
+    '.process-list li',
+    '.pricing-card',
+    '.pricing-copy',
+    '.trust-layout > div',
+    '.faq-heading',
+    '.faq-item',
+    '.lead-copy',
+    '.lead-form',
+  ];
+  const targets = [...new Set(selectors.flatMap((selector) => (
+    [...document.querySelectorAll(selector)]
+  )))];
+
+  targets.forEach((target, index) => {
+    target.dataset.reveal = '';
+    target.style.setProperty('--reveal-delay', `${(index % 3) * 65}ms`);
+  });
+  document.documentElement.classList.add('motion-ready');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-visible');
+      observer.unobserve(entry.target);
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+  targets.forEach((target) => observer.observe(target));
+}
+
+function installFaqAnimations() {
+  const items = [...document.querySelectorAll('.faq-item')];
+  if (!items.length) return;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.documentElement.classList.add('faq-enhanced');
+
+  items.forEach((item) => {
+    const summary = item.querySelector('summary');
+    const content = item.querySelector('.faq-item__content');
+    let closeTimer;
+    content.setAttribute('aria-hidden', 'true');
+
+    summary.addEventListener('click', (event) => {
+      event.preventDefault();
+      window.clearTimeout(closeTimer);
+      const expanded = item.classList.contains('is-expanded');
+
+      if (expanded) {
+        item.classList.remove('is-expanded');
+        content.setAttribute('aria-hidden', 'true');
+        if (reducedMotion) {
+          item.open = false;
+        } else {
+          closeTimer = window.setTimeout(() => {
+            if (!item.classList.contains('is-expanded')) item.open = false;
+          }, 330);
+        }
+        return;
+      }
+
+      item.open = true;
+      content.setAttribute('aria-hidden', 'false');
+      if (reducedMotion) {
+        item.classList.add('is-expanded');
+      } else {
+        window.requestAnimationFrame(() => {
+          item.classList.add('is-expanded');
+        });
+      }
+    });
+  });
+}
+
+function storageRead(key) {
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function storageWrite(key, value) {
+  try {
+    window.sessionStorage.setItem(key, value);
+  } catch {
+    // Отправка продолжает работать, даже если sessionStorage недоступен.
+  }
+}
+
+function formFingerprint() {
+  const contactType = form.elements.contact_type.value;
+  const contact = form.elements[contactType].value.trim().toLowerCase();
+  const problem = form.elements.problem.value.trim().replace(/\s+/g, ' ').toLowerCase();
+  const source = `${contactType}|${contact}|${problem}|${form.elements.name.value.trim()}|${form.elements.company.value.trim()}`;
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16);
+}
+
+function requestId() {
+  if (typeof crypto?.randomUUID === 'function') return crypto.randomUUID();
+  return `aib-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function buildPayload(id) {
+  const payload = new FormData(form);
+  payload.set('consent', 'true');
+  payload.set('_subject', 'Заявка с лендинга «Компания АиБ»');
+  payload.set('_template', 'table');
+  payload.set('request_id', id);
+  payload.set('page_url', `${window.location.origin}${window.location.pathname}`);
+  payload.set('submitted_at', new Date().toISOString());
+  Object.entries(safeUtm()).forEach(([key, value]) => payload.set(key, value));
+  return payload;
+}
+
+async function parseResponse(response) {
+  const raw = await response.text();
+  let data = {};
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    data = { message: raw };
+  }
+  const accepted = data.success === true || data.success === 'true';
+  if (!response.ok || !accepted) {
+    const error = new Error(data.message || `Сервер вернул код ${response.status}.`);
+    error.status = response.status;
+    throw error;
+  }
+  return data;
+}
+
+form?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (isSubmitting) return;
+
+  const errors = validateForm();
+  if (errors.length) {
+    track('form_error', { fields: errors.join(',') });
+    showFormStatus('error', 'Проверьте отмеченные поля. Введённые данные сохранены.');
+    form.querySelector('[aria-invalid="true"]')?.focus();
+    return;
+  }
+
+  if (!formEndpoint) {
+    track('form_error', { fields: 'endpoint' });
+    showFormStatus('error', 'Канал отправки не настроен. Позвоните или напишите нам по контактам внизу страницы.');
+    return;
+  }
+
+  const now = Date.now();
+  const fingerprint = formFingerprint();
+  let lastAccepted = null;
+  try {
+    lastAccepted = JSON.parse(storageRead('aib:last-accepted') || 'null');
+  } catch {
+    lastAccepted = null;
+  }
+  const duplicateWindow = duplicateMinutes * 60 * 1000;
+  if (
+    lastAccepted &&
+    lastAccepted.fingerprint === fingerprint &&
+    now - Number(lastAccepted.at) < duplicateWindow
+  ) {
+    showFormStatus('success', 'Эта заявка уже принята. Повторно отправлять её не нужно.');
+    return;
+  }
+
+  const lastAttempt = Number(storageRead('aib:last-attempt') || 0);
+  const secondsLeft = Math.ceil((retrySeconds * 1000 - (now - lastAttempt)) / 1000);
+  if (lastAttempt && secondsLeft > 0) {
+    showFormStatus('error', `Повторить отправку можно через ${secondsLeft} сек. Данные сохранены.`);
+    return;
+  }
+
+  if (form.elements._honey.value) {
+    showFormStatus('error', 'Не удалось отправить форму. Обновите страницу и попробуйте ещё раз.');
+    return;
+  }
+
+  isSubmitting = true;
+  storageWrite('aib:last-attempt', String(now));
+  submitButton.disabled = true;
+  submitButton.setAttribute('aria-disabled', 'true');
+  submitButton.textContent = 'Отправляем…';
+  showFormStatus('sending', 'Передаём заявку защищённому обработчику…');
+
+  let pending;
+  try { pending = JSON.parse(storageRead('aib:pending') || 'null'); } catch { pending = null; }
+  const id = pending?.fingerprint === fingerprint ? pending.id : requestId();
+  storageWrite('aib:pending', JSON.stringify({ id, fingerprint }));
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch(formEndpoint, {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+      body: buildPayload(id),
+      signal: controller.signal,
+    });
+    await parseResponse(response);
+    storageWrite(
+      'aib:last-accepted',
+      JSON.stringify({ fingerprint, at: Date.now() })
+    );
+    track('lead_accepted');
+    showFormStatus('success', 'Заявка принята. Ответим в течение 2 рабочих часов.');
+    storageWrite('aib:pending', 'null');
+    form.reset();
+    showContactField('phone');
+    formStarted = false;
+  } catch (error) {
+    track('form_error', { fields: error.status === 429 ? 'rate_limit' : 'server' });
+    const message = error.status === 429
+      ? 'Слишком много попыток. Подождите несколько минут и отправьте заявку снова.'
+      : 'Не удалось подтвердить приём заявки. Данные сохранены — проверьте соединение и повторите отправку.';
+    showFormStatus('error', message);
+  } finally {
+    window.clearTimeout(timeout);
+    submitButton.disabled = false;
+    submitButton.removeAttribute('aria-disabled');
+    submitButton.innerHTML = submitButtonContent;
+    isSubmitting = false;
+  }
+});
+
+symptomButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    const wasSelected = button.getAttribute('aria-pressed') === 'true';
+    symptomButtons.forEach((item) => {
+      item.setAttribute('aria-pressed', 'false');
+      item.querySelector('.symptom-card__action-label').textContent = 'Добавить в заявку';
+    });
+    button.setAttribute('aria-pressed', String(!wasSelected));
+
+    const problem = form.elements.problem;
+    const prefix = `Симптом: ${button.dataset.symptom}. `;
+
+    if (wasSelected) {
+      if (problem.value.startsWith(prefix)) {
+        problem.value = problem.value.slice(prefix.length).trimStart();
+      }
+      selectionStatus.textContent = 'Симптом не выбран. Можно описать ситуацию своими словами.';
+      hideSelectionToast();
+      return;
+    }
+
+    if (!problem.value.trim() || problem.value.startsWith('Симптом:')) {
+      problem.value = prefix;
+    }
+    button.querySelector('.symptom-card__action-label').textContent = 'Добавлено';
+    selectionStatus.textContent = `«${button.dataset.symptom}» добавлено в черновик заявки.`;
+    markFormStarted();
+    showSelectionToast(button.dataset.symptom);
+  });
+});
+
+document.querySelectorAll('[data-open-dialog]').forEach((button) => {
+  button.addEventListener('click', () => {
+    const dialog = document.querySelector(`#${button.dataset.openDialog}`);
+    if (typeof dialog?.showModal === 'function') {
+      dialog.showModal();
+      updateFloatingCta();
+    }
+  });
+});
+
+document.querySelectorAll('dialog').forEach((dialog) => {
+  dialog.addEventListener('close', updateFloatingCta);
+});
+
+installMetrica();
+installFloatingCta();
+installScrollReveals();
+installFaqAnimations();
+showContactField('phone');

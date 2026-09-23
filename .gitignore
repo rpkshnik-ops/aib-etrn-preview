@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+screenshots/
+artifacts/
+site.local.json
+config.json
+*.env
+.env
+*.sqlite3*
+*.log
+*.docx
+*.xlsx
+node_modules/

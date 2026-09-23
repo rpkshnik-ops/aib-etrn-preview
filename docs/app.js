@@ -351,7 +351,7 @@ function formFingerprint() {
   const contactType = form.elements.contact_type.value;
   const contact = form.elements[contactType].value.trim().toLowerCase();
   const problem = form.elements.problem.value.trim().replace(/\s+/g, ' ').toLowerCase();
-  const source = `${contactType}|${contact}|${problem}`;
+  const source = `${contactType}|${contact}|${problem}|${form.elements.name.value.trim()}|${form.elements.company.value.trim()}`;
   let hash = 2166136261;
   for (let index = 0; index < source.length; index += 1) {
     hash ^= source.charCodeAt(index);
@@ -367,8 +367,8 @@ function requestId() {
 
 function buildPayload(id) {
   const payload = new FormData(form);
-  payload.delete('consent');
-  payload.set('_subject', 'Тестовая заявка с лендинга «Компания АиБ»');
+  payload.set('consent', 'true');
+  payload.set('_subject', 'Заявка с лендинга «Компания АиБ»');
   payload.set('_template', 'table');
   payload.set('request_id', id);
   payload.set('page_url', `${window.location.origin}${window.location.pathname}`);
@@ -449,11 +449,18 @@ form?.addEventListener('submit', async (event) => {
   submitButton.textContent = 'Отправляем…';
   showFormStatus('sending', 'Передаём заявку защищённому обработчику…');
 
+  let pending;
+  try { pending = JSON.parse(storageRead('aib:pending') || 'null'); } catch { pending = null; }
+  const id = pending?.fingerprint === fingerprint ? pending.id : requestId();
+  storageWrite('aib:pending', JSON.stringify({ id, fingerprint }));
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 15000);
   try {
     const response = await fetch(formEndpoint, {
       method: 'POST',
       headers: { Accept: 'application/json' },
-      body: buildPayload(requestId()),
+      body: buildPayload(id),
+      signal: controller.signal,
     });
     await parseResponse(response);
     storageWrite(
@@ -462,6 +469,7 @@ form?.addEventListener('submit', async (event) => {
     );
     track('lead_accepted');
     showFormStatus('success', 'Заявка принята. Ответим в течение 2 рабочих часов.');
+    storageWrite('aib:pending', 'null');
     form.reset();
     showContactField('phone');
     formStarted = false;
@@ -472,6 +480,7 @@ form?.addEventListener('submit', async (event) => {
       : 'Не удалось подтвердить приём заявки. Данные сохранены — проверьте соединение и повторите отправку.';
     showFormStatus('error', message);
   } finally {
+    window.clearTimeout(timeout);
     submitButton.disabled = false;
     submitButton.removeAttribute('aria-disabled');
     submitButton.innerHTML = submitButtonContent;

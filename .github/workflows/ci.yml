@@ -1,0 +1,66 @@
+name: Project checks
+on:
+  push:
+    branches: [main, server-release]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m unittest discover -s tests -v
+      - run: python build.py --mode preview
+      - run: diff -r docs dist
+      - run: python -m playwright install --with-deps chromium
+      - name: Browser checks (preview then server build)
+        run: |
+          python -m http.server 4173 --bind 127.0.0.1 --directory dist > /tmp/aib-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          python browser_check.py
+          python documents_check.py
+          python -m tests.production_fixture
+          python browser_check.py
+      - name: Check nginx and systemd configuration
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nginx python3-venv
+          python deploy/render_nginx.py --domain landing.example.org --output /tmp/aib.conf
+          sudo cp /tmp/aib.conf /etc/nginx/sites-enabled/aib-etrn
+          sudo nginx -t
+          bash -n deploy/publish.sh deploy/rollback.sh deploy/manage.sh deploy/install.sh deploy/update.sh
+      - name: Run production WSGI server and delivery worker
+        env:
+          SITE_ORIGIN: https://landing.example.org
+          HASH_SECRET: ci-test-secret-not-used-for-real-applications-123456789
+          DATABASE_PATH: /tmp/aib-ci/leads.sqlite3
+          SMTP_HOST: smtp.example.org
+        run: |
+          python -m backend.worker > /tmp/aib-worker.log 2>&1 &
+          worker_pid=$!
+          gunicorn --bind 127.0.0.1:8081 'backend.app:create_app()' > /tmp/aib-api.log 2>&1 &
+          api_pid=$!
+          trap 'kill "$worker_pid" "$api_pid"' EXIT
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:8081/healthz; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+      - name: Install and reconfigure on disposable Linux server
+        run: |
+          sudo install -d -m 755 /opt/aib-etrn/repo
+          sudo cp -a . /opt/aib-etrn/repo/
+          sudo useradd --system --home-dir /var/lib/aib-etrn --shell /usr/sbin/nologin aib-etrn
+          sudo install -d -o aib-etrn -g aib-etrn -m 700 /var/lib/aib-etrn
+          sudo install -d -o root -g aib-etrn -m 750 /etc/aib-etrn
+          sudo /usr/bin/python3 -m venv /opt/aib-etrn/venv
+          sudo /opt/aib-etrn/venv/bin/python -m pip install -r requirements.txt
+          sudo env GITHUB_ACTIONS=true /opt/aib-etrn/venv/bin/python /opt/aib-etrn/repo/tests/linux_install_smoke.py

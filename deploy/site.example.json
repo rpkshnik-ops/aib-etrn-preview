@@ -1,0 +1,9 @@
+{
+  "mode": "staging",
+  "site_url": "https://YOUR-DOMAIN.ru",
+  "privacy_url": "",
+  "consent_url": "",
+  "offer_url": "",
+  "delivery_confirmed": false,
+  "metrica_id": ""
+}

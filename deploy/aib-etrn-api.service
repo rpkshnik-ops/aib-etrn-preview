@@ -1,0 +1,22 @@
+[Unit]
+Description=Aib landing lead API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=aib-etrn
+Group=aib-etrn
+WorkingDirectory=/opt/aib-etrn/repo
+EnvironmentFile=/etc/aib-etrn.env
+ExecStart=/opt/aib-etrn/venv/bin/gunicorn --bind 127.0.0.1:8081 --workers 2 --threads 2 --timeout 30 --access-logfile /dev/null --error-logfile - backend.app:create_app()
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/aib-etrn
+
+[Install]
+WantedBy=multi-user.target

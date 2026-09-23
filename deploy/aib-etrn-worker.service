@@ -1,0 +1,22 @@
+[Unit]
+Description=Aib landing email delivery worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=aib-etrn
+Group=aib-etrn
+WorkingDirectory=/opt/aib-etrn/repo
+EnvironmentFile=/etc/aib-etrn.env
+ExecStart=/opt/aib-etrn/venv/bin/python -m backend.worker
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/aib-etrn
+
+[Install]
+WantedBy=multi-user.target
