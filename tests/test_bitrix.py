@@ -83,7 +83,7 @@ class BitrixPackageTest(unittest.TestCase):
                 path.write_text('CORE DO NOT CHANGE', encoding='utf-8')
             (root / 'index.php').write_text('ORIGINAL INDEX', encoding='utf-8')
             command = [PHP, str(ROOT / 'bitrix/install.php'), '--root=' + str(root), '--backup-dir=' + str(base)]
-            result = subprocess.run(command, input='landing.example.org\n7\n\n\nstaging\n\nyes\n', text=True, encoding='utf-8', capture_output=True, check=True)
+            result = subprocess.run(command, input='https://invalid.example.org/path\nxn--e1afmkfd.xn--p1ai\n7\n\n\nstaging\n\nyes\n', text=True, encoding='utf-8', capture_output=True, check=True)
             self.assertIn('Файлы установлены', result.stdout)
             self.assertFalse(result.stderr)
             backups = list(base.glob('aib-etrn-backup-*'))
@@ -95,6 +95,7 @@ class BitrixPackageTest(unittest.TestCase):
             self.assertIn('Disallow: /\n', (root / 'robots.txt').read_text())
             config = root / 'local/php_interface/aib_etrn.php'
             self.assertIn("'metrica_id' => ''", config.read_text())
+            self.assertIn("'site_url' => 'https://xn--e1afmkfd.xn--p1ai'", config.read_text())
             for answer, expected in [('12345678', '12345678'), ('', '12345678'), ('-', '')]:
                 subprocess.run(command + ['--analytics-only'], input=answer + '\nyes\n', text=True, encoding='utf-8', capture_output=True, check=True)
                 self.assertIn("'metrica_id' => '" + expected + "'", config.read_text())

@@ -68,7 +68,7 @@ try {
     if (!$analyticsOnly) {
         do {
             $domain = ask('Домен сайта без https:// и пути', (string)parse_url($settings['site_url'], PHP_URL_HOST));
-            $valid = (bool)preg_match('/^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}$/D', $domain);
+            $valid = strlen($domain) <= 253 && (bool)preg_match('/^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+(?:[a-zA-Z]{2,63}|xn--[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,57}[a-zA-Z0-9])?)$/D', $domain);
             if (!$valid) { echo "Укажите доменное имя в ASCII/Punycode.\n"; }
         } while (!$valid);
         $settings['site_url'] = 'https://' . strtolower($domain);
