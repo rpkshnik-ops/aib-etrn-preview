@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Supported automatic installation: Ubuntu 24.04+ / Debian 12+, systemd.
 set -euo pipefail
+if [[ ${AIB_LEGACY_PYTHON:-0} != 1 ]]; then
+  echo 'Текущая версия: PHP 8.3 / Bitrix. Используйте php bitrix/install.php --root=/путь/к/сайту и README.md.' >&2
+  echo 'Этот скрипт относится только к архивной Python-версии v1.x (README_LEGACY.md).' >&2
+  exit 1
+fi
 [[ $EUID -eq 0 ]] || { echo 'Запустите: sudo bash deploy/install.sh' >&2; exit 1; }
 project=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
 [[ "$project" == /opt/aib-etrn/repo ]] || { echo 'Склонируйте проект в /opt/aib-etrn/repo, как указано в README.' >&2; exit 1; }

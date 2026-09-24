@@ -1,0 +1,20 @@
+/* Bitrix panel remains outside .aib-landing. Core form markup is not rewritten. */
+.aib-form-container { min-width: 0; }
+.aib-bitrix-form > form { display: grid; gap: 22px; }
+.aib-question { margin: 0; padding: 0; border: 0; min-width: 0; }
+.aib-question legend { padding: 0 0 8px; font-size: 15px; font-weight: 700; }
+.aib-question__control { min-width: 0; }
+.aib-question input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+.aib-question textarea, .aib-question select { width: 100%; max-width: 100%; }
+.aib-question input[type="checkbox"], .aib-question input[type="radio"] { width: 20px; height: 20px; accent-color: #171914; vertical-align: middle; margin-right: 8px; }
+.aib-question textarea { min-height: 150px; }
+.aib-question select { min-height: 50px; padding: 12px; border: 1px solid #ccc; border-radius: 12px; }
+.aib-question--consent legend { font-weight: 400; }
+.aib-form-message { background: #fff3f0; color: #8a2717; padding: 20px; border-radius: 20px; margin-bottom: 18px; }
+.aib-form-message ul { padding-left: 20px; }
+.aib-form-success h3 { margin: 0; font-size: 28px; }
+.aib-form-success .button { margin-top: 12px; }
+.aib-captcha { display: grid; gap: 12px; }
+.aib-bitrix-form [aria-disabled="true"] { opacity: .7; cursor: wait; }
+.aib-question [aria-invalid="true"] { border-color: #ae3421; }
+.aib-question .form-required { color: #8a2717; }
