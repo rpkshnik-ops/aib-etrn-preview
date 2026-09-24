@@ -6,13 +6,14 @@ $aibSettings = \Aib\Etrn\settings();
 $roles = array_flip($aibSettings['field_sids']);
 $hasErrors = ($arResult['isFormErrors'] ?? 'N') === 'Y';
 $hasNote = ($arResult['isFormNote'] ?? 'N') === 'Y';
+$fieldErrors = is_array($arResult['FORM_ERRORS'] ?? null) ? $arResult['FORM_ERRORS'] : [];
 $plain = static fn($text): string => \Aib\Etrn\h(is_scalar($text) ? strip_tags((string)$text) : '');
 ?>
 <?php if ($hasErrors): ?>
     <div class="aib-form-message aib-form-message--error" data-bitrix-errors role="alert" tabindex="-1">
         <strong>Проверьте заполнение формы</strong>
-        <?php if (!empty($arResult['FORM_ERRORS']) && is_array($arResult['FORM_ERRORS'])): ?>
-            <ul><?php foreach ($arResult['FORM_ERRORS'] as $error): ?><li><?= $plain($error) ?></li><?php endforeach; ?></ul>
+        <?php if ($fieldErrors): ?>
+            <ul><?php foreach ($fieldErrors as $error): ?><li><?= $plain($error) ?></li><?php endforeach; ?></ul>
         <?php else: ?>
             <p><?= $plain($arResult['FORM_ERRORS_TEXT'] ?? '') ?></p>
         <?php endif; ?>
@@ -25,7 +26,7 @@ $plain = static fn($text): string => \Aib\Etrn\h(is_scalar($text) ? strip_tags((
         <p>Ответим в течение 2 рабочих часов.</p>
         <a class="button button--primary" href="<?= \Aib\Etrn\h($APPLICATION->GetCurPage(false)) ?>#request">Новая заявка</a>
     </div>
-<?php else: ?>
+<?php elseif (!empty($arResult['FORM_HEADER'])): ?>
     <div class="lead-form aib-bitrix-form" data-bitrix-form>
     <?= $arResult['FORM_HEADER'] ?? '' ?>
     <?php foreach (($arResult['QUESTIONS'] ?? []) as $sid => $question): ?>
@@ -40,7 +41,7 @@ $plain = static fn($text): string => \Aib\Etrn\h(is_scalar($text) ? strip_tags((
         if ($role === 'consent') {
             $APPLICATION->IncludeFile('/include/aib/documents.php', [], ['MODE' => 'php', 'SHOW_BORDER' => false]);
         }
-        $fieldError = $arResult['FORM_ERRORS'][$sid] ?? '';
+        $fieldError = $fieldErrors[$sid] ?? '';
         ?>
         <fieldset class="form-field aib-question <?= $role === 'consent' ? 'aib-question--consent' : '' ?>"
                   data-aib-field="<?= \Aib\Etrn\h($role) ?>" data-required="<?= ($question['REQUIRED'] ?? 'N') === 'Y' ? 'Y' : 'N' ?>">

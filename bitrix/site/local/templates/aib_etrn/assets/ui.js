@@ -333,12 +333,20 @@ form?.querySelectorAll('.aib-question').forEach((field, index) => {
 });
 
 form?.addEventListener('submit', (event) => {
+  if (event.defaultPrevented) return;
   if (isSubmitting) { event.preventDefault(); return; }
   isSubmitting = true;
   // Do not disable the submit button: Bitrix needs web_form_submit in the POST.
   submitButton?.setAttribute('aria-disabled', 'true');
   if (formStatus) formStatus.textContent = 'Передаём заявку…';
   // Native browser POST continues to the action from FORM_HEADER.
+  queueMicrotask(() => {
+    if (event.defaultPrevented) {
+      isSubmitting = false;
+      submitButton?.removeAttribute('aria-disabled');
+      if (formStatus) formStatus.textContent = '';
+    }
+  });
 });
 window.addEventListener('pageshow', () => {
   isSubmitting = false;
