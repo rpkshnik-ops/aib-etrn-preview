@@ -6,7 +6,10 @@
 .aib-question__control { min-width: 0; }
 .aib-question input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
 .aib-question textarea, .aib-question select { width: 100%; max-width: 100%; }
-.aib-question input[type="checkbox"], .aib-question input[type="radio"] { width: 20px; height: 20px; accent-color: #171914; vertical-align: middle; margin-right: 8px; }
+.aib-question input[type="checkbox"], .aib-question input[type="radio"] { width: 20px; height: 20px; min-height: 0; padding: 0; accent-color: #171914; vertical-align: middle; margin: 2px 8px 0 0; flex-shrink: 0; }
+.aib-question__control > label { display: inline; font-weight: 400; margin: 0; }
+.aib-question--consent .aib-question__control { display: flex; align-items: flex-start; gap: 4px; }
+.aib-question--consent .aib-question__control > br { display: none; }
 .aib-question textarea { min-height: 150px; }
 .aib-question select { min-height: 50px; padding: 12px; border: 1px solid #ccc; border-radius: 12px; }
 .aib-question--consent legend { font-weight: 400; }

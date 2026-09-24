@@ -59,11 +59,16 @@ def main():
                         page.locator('[name="form_text_101"]').fill('customer@example.org')
                         page.locator('[name="form_text_102"]').fill('Тест')
                         page.locator('[name="form_checkbox_CONSENT[]"]').check()
+                        assert page.locator('[name="form_checkbox_CONSENT[]"]').bounding_box()['height'] <= 24
+                        assert int(page.locator('[name="web_form_submit"]').evaluate('e => getComputedStyle(e).fontWeight')) >= 700
                         for link in page.locator('.form-documents a.document-link').all():
                             assert link.get_attribute('target') == '_blank'
                             response = page.request.get(url.rstrip('/') + link.get_attribute('href'))
                             assert response.ok and response.body().startswith(b'%PDF-')
-                        page.locator('#request').screenshot(path=str(screenshots / f'form-{width}.png'))
+                        # Full-section capture neutralizes fixed/sticky overlays only for the image.
+                        # Their live behavior stays active for browser interaction checks.
+                        page.locator('#request').screenshot(path=str(screenshots / f'form-{width}.png'),
+                            style='.skip-link:not(:focus), .selection-toast { visibility: hidden !important; } .site-header, .lead-copy { position: static !important; }')
                         with page.expect_navigation() as navigation:
                             page.locator('[name="web_form_submit"]').click()
                         result = navigation.value.json()

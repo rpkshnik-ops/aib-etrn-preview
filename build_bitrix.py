@@ -89,8 +89,9 @@ def build():
     css = (ROOT / 'src/styles.css').read_text(encoding='utf-8')
     # Keep the admin panel outside global resets, retain the existing layout selectors.
     css = css.replace('*,\n*::before,\n*::after', '.aib-landing,\n.aib-landing *,\n.aib-landing *::before,\n.aib-landing *::after')
-    css = re.sub(r'(?m)^(button|input|textarea|select|a)(?=[,{ ])', r'.aib-landing \1', css)
-    css = css.replace('body {', 'body.aib-page {').replace(':focus-visible {', '.aib-landing :focus-visible {')
+    css = re.sub(r'(?m)^(button|input|textarea|select|a)(?=[,{ ])', r':where(.aib-landing) \1', css)
+    css = css.replace('body {', 'body.aib-page {')
+    css = re.sub(r'(?m)^:focus-visible \{', ':where(.aib-landing) :focus-visible {', css)
     css += '\n' + (ROOT / 'bitrix/compatibility.css').read_text(encoding='utf-8')
     write(TEMPLATE / 'template_styles.css', css)
     write(TEMPLATE / 'assets/ui.js', native_js())

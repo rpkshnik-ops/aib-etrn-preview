@@ -38,23 +38,23 @@ body.aib-page {
   text-rendering: optimizeLegibility;
 }
 
-.aib-landing button,
-.aib-landing a {
+:where(.aib-landing) button,
+:where(.aib-landing) a {
   -webkit-tap-highlight-color: transparent;
 }
 
-.aib-landing button,
-.aib-landing input,
-.aib-landing textarea,
-.aib-landing select {
+:where(.aib-landing) button,
+:where(.aib-landing) input,
+:where(.aib-landing) textarea,
+:where(.aib-landing) select {
   font: inherit;
 }
 
-.aib-landing a {
+:where(.aib-landing) a {
   color: inherit;
 }
 
-.aib-landing :focus-visible {
+:where(.aib-landing) :focus-visible {
   outline: 3px solid #1677ff;
   outline-offset: 4px;
 }
@@ -2085,12 +2085,12 @@ body[data-variant="b"] .symptom-card[aria-pressed="true"] {
 }
 
 .document-link:hover,
-.document-link.aib-landing :focus-visible {
+.document-link:focus-visible {
   background: #fff6cc;
   border-color: #987500;
 }
 
-.document-link.aib-landing :focus-visible {
+.document-link:focus-visible {
   outline: 3px solid var(--ink);
   outline-offset: 3px;
 }
@@ -2698,7 +2698,10 @@ body[data-variant="b"] .symptom-card[aria-pressed="true"] {
 .aib-question__control { min-width: 0; }
 .aib-question input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
 .aib-question textarea, .aib-question select { width: 100%; max-width: 100%; }
-.aib-question input[type="checkbox"], .aib-question input[type="radio"] { width: 20px; height: 20px; accent-color: #171914; vertical-align: middle; margin-right: 8px; }
+.aib-question input[type="checkbox"], .aib-question input[type="radio"] { width: 20px; height: 20px; min-height: 0; padding: 0; accent-color: #171914; vertical-align: middle; margin: 2px 8px 0 0; flex-shrink: 0; }
+.aib-question__control > label { display: inline; font-weight: 400; margin: 0; }
+.aib-question--consent .aib-question__control { display: flex; align-items: flex-start; gap: 4px; }
+.aib-question--consent .aib-question__control > br { display: none; }
 .aib-question textarea { min-height: 150px; }
 .aib-question select { min-height: 50px; padding: 12px; border: 1px solid #ccc; border-radius: 12px; }
 .aib-question--consent legend { font-weight: 400; }
